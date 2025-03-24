@@ -9,7 +9,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background-color: #f8f9fa; /* Hellgrau */
         }
         canvas {
             border: 2px solid black;
@@ -19,155 +19,183 @@
 <body>
     <canvas id="ticTacToeCanvas" width="300" height="300"></canvas>
     <script>
-        // JavaScript-Code wird hier eingefügt
-const canvas = document.getElementById('ticTacToeCanvas');
-const ctx = canvas.getContext('2d');
-const gridSize = 3;
-const cellSize = canvas.width / gridSize;
-let board = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
-let currentPlayer = 'X';
-let gameOver = false;
+        const canvas = document.getElementById('ticTacToeCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 3;
+        const cellSize = canvas.width / gridSize;
+        let board = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
+        let currentPlayer = 'X';
+        let gameOver = false;
 
-function drawBoard() {
-    for (let i = 1; i < gridSize; i++) {
-        ctx.beginPath();
-        ctx.moveTo(cellSize * i, 0);
-        ctx.lineTo(cellSize * i, canvas.height);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(0, cellSize * i);
-        ctx.lineTo(canvas.width, cellSize * i);
-        ctx.stroke();
-    }
-}
+        // Farbvariablen
+        const boardLineColor = '#333'; // Dunkelgrau
+        const xColor = '#007bff'; // Blau
+        const oColor = '#dc3545'; // Rot
+        const backgroundColor = '#f8f9fa'; // Hellgrau
 
-function drawMarks() {
-    for (let row = 0; row < gridSize; row++) {
-        for (let col = 0; col < gridSize; col++) {
-            if (board[row][col]) {
-                ctx.font = `${cellSize * 0.8}px serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(board[row][col], col * cellSize + cellSize / 2, row * cellSize + cellSize / 2);
+        function drawBoard() {
+            ctx.strokeStyle = boardLineColor;
+            for (let i = 1; i < gridSize; i++) {
+                ctx.beginPath();
+                ctx.moveTo(cellSize * i, 0);
+                ctx.lineTo(cellSize * i, canvas.height);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, cellSize * i);
+                ctx.lineTo(canvas.width, cellSize * i);
+                ctx.stroke();
             }
         }
-    }
-}
 
-function handleClick(event) {
-    if (gameOver || currentPlayer === 'O') return; // Verhindert Klicks während des Computerzugs
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const row = Math.floor(y / cellSize);
-    const col = Math.floor(x / cellSize);
-    if (board[row][col]) return;
-    board[row][col] = currentPlayer;
-    drawMarks();
-    if (checkWin(currentPlayer)) {
-        alert(`${currentPlayer} gewinnt!`);
-        gameOver = true;
-    } else if (checkDraw()) {
-        alert('Unentschieden!');
-        gameOver = true;
-    } else {
-        currentPlayer = 'O';
-        makeComputerMove();
-    }
-}
-
-function makeComputerMove() {
-    if (gameOver) return;
-    let bestMove = findBestMove();
-    if (bestMove) {
-        board[bestMove.row][bestMove.col] = 'O';
-        drawMarks();
-        if (checkWin('O')) {
-            alert('Computer gewinnt!');
-            gameOver = true;
-        } else if (checkDraw()) {
-            alert('Unentschieden!');
-            gameOver = true;
-        } else {
-            currentPlayer = 'X';
-        }
-    }
-}
-
-function findBestMove() {
-    let bestScore = -Infinity;
-    let move;
-    for (let row = 0; row < gridSize; row++) {
-        for (let col = 0; col < gridSize; col++) {
-            if (!board[row][col]) {
-                board[row][col] = 'O';
-                let score = minimax(board, 0, false);
-                board[row][col] = null;
-                if (score > bestScore) {
-                    bestScore = score;
-                    move = { row, col };
+        function drawMarks() {
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    if (board[row][col]) {
+                        const x = col * cellSize + cellSize / 2;
+                        const y = row * cellSize + cellSize / 2;
+                        if (board[row][col] === 'X') {
+                            drawX(x, y);
+                        } else {
+                            drawO(x, y);
+                        }
+                    }
                 }
             }
         }
-    }
-    return move;
-}
 
-function minimax(board, depth, isMaximizing) {
-    if (checkWin('O')) return 1;
-    if (checkWin('X')) return -1;
-    if (checkDraw()) return 0;
+        function drawX(x, y) {
+            ctx.strokeStyle = xColor;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x - cellSize / 3, y - cellSize / 3);
+            ctx.lineTo(x + cellSize / 3, y + cellSize / 3);
+            ctx.moveTo(x + cellSize / 3, y - cellSize / 3);
+            ctx.lineTo(x - cellSize / 3, y + cellSize / 3);
+            ctx.stroke();
+        }
 
-    if (isMaximizing) {
-        let bestScore = -Infinity;
-        for (let row = 0; row < gridSize; row++) {
-            for (let col = 0; col < gridSize; col++) {
-                if (!board[row][col]) {
-                    board[row][col] = 'O';
-                    let score = minimax(board, depth + 1, false);
-                    board[row][col] = null;
-                    bestScore = Math.max(score, bestScore);
+        function drawO(x, y) {
+            ctx.strokeStyle = oColor;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(x, y, cellSize / 3, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+
+        function handleClick(event) {
+            if (gameOver || currentPlayer === 'O') return; // Verhindert Klicks während des Computerzugs
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const row = Math.floor(y / cellSize);
+            const col = Math.floor(x / cellSize);
+            if (board[row][col]) return;
+            board[row][col] = currentPlayer;
+            drawMarks();
+            if (checkWin(currentPlayer)) {
+                alert(`${currentPlayer} gewinnt!`);
+                gameOver = true;
+            } else if (checkDraw()) {
+                alert('Unentschieden!');
+                gameOver = true;
+            } else {
+                currentPlayer = 'O';
+                makeComputerMove();
+            }
+        }
+
+        function makeComputerMove() {
+            if (gameOver) return;
+            let bestMove = findBestMove();
+            if (bestMove) {
+                board[bestMove.row][bestMove.col] = 'O';
+                drawMarks();
+                if (checkWin('O')) {
+                    alert('Computer gewinnt!');
+                    gameOver = true;
+                } else if (checkDraw()) {
+                    alert('Unentschieden!');
+                    gameOver = true;
+                } else {
+                    currentPlayer = 'X';
                 }
             }
         }
-        return bestScore;
-    } else {
-        let bestScore = Infinity;
-        for (let row = 0; row < gridSize; row++) {
-            for (let col = 0; col < gridSize; col++) {
-                if (!board[row][col]) {
-                    board[row][col] = 'X';
-                    let score = minimax(board, depth + 1, true);
-                    board[row][col] = null;
-                    bestScore = Math.min(score, bestScore);
+
+        function findBestMove() {
+            let bestScore = -Infinity;
+            let move;
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    if (!board[row][col]) {
+                        board[row][col] = 'O';
+                        let score = minimax(board, 0, false);
+                        board[row][col] = null;
+                        if (score > bestScore) {
+                            bestScore = score;
+                            move = { row, col };
+                        }
+                    }
                 }
             }
+            return move;
         }
-        return bestScore;
-    }
-}
 
-function checkWin(player) {
-    for (let i = 0; i < gridSize; i++) {
-        if (board[i][0] === player && board[i][1] === player && board[i][2] === player) return true;
-        if (board[0][i] === player && board[1][i] === player && board[2][i] === player) return true;
-    }
-    if (board[0][0] === player && board[1][1] === player && board[2][2] === player) return true;
-    if (board[0][2] === player && board[1][1] === player && board[2][0] === player) return true;
-    return false;
-}
+        function minimax(board, depth, isMaximizing) {
+            if (checkWin('O')) return 1;
+            if (checkWin('X')) return -1;
+            if (checkDraw()) return 0;
 
-function checkDraw() {
-    for (let row = 0; row < gridSize; row++) {
-        for (let col = 0; col < gridSize; col++) {
-            if (!board[row][col]) return false;
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let row = 0; row < gridSize; row++) {
+                    for (let col = 0; col < gridSize; col++) {
+                        if (!board[row][col]) {
+                            board[row][col] = 'O';
+                            let score = minimax(board, depth + 1, false);
+                            board[row][col] = null;
+                            bestScore = Math.max(score, bestScore);
+                        }
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let row = 0; row < gridSize; row++) {
+                    for (let col = 0; col < gridSize; col++) {
+                        if (!board[row][col]) {
+                            board[row][col] = 'X';
+                            let score = minimax(board, depth + 1, true);
+                            board[row][col] = null;
+                            bestScore = Math.min(score, bestScore);
+                        }
+                    }
+                }
+                return bestScore;
+            }
         }
-    }
-    return true;
-}
 
-drawBoard();
-canvas.addEventListener('click', handleClick);   
+        function checkWin(player) {
+            for (let i = 0; i < gridSize; i++) {
+                if (board[i][0] === player && board[i][1] === player && board[i][2] === player) return true;
+                if (board[0][i] === player && board[1][i] === player && board[2][i] === player) return true;
+            }
+            if (board[0][0] === player && board[1][1] === player && board[2][2] === player) return true;
+            if (board[0][2] === player && board[1][1] === player && board[2][0] === player) return true;
+            return false;
+        }
+
+        function checkDraw() {
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    if (!board[row][col]) return false;
+                }
+            }
+            return true;
+        }
+
+        drawBoard();
+        canvas.addEventListener('click', handleClick);
     </script>
 </body>
 </html>
